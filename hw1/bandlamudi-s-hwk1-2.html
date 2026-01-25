@@ -7515,192 +7515,17 @@ a.anchor-link {
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <h2 id="Dataset-Construction">Dataset Construction<a class="anchor-link" href="#Dataset-Construction">¶</a></h2><p>I constructed a plan–county–year dataset for Medicare Advantage plans in 2018 by combining monthly enrollment data with contract-level information. Monthly data were collapsed to average enrollment by plan and county and restricted to approved counties using Medicare Advantage service area files.</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=d8779595">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [6]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">HTML</span>
-<span class="n">HTML</span><span class="p">(</span><span class="s2">"""</span>
-<span class="s2">&lt;style&gt;</span>
-<span class="s2">div.input {</span>
-<span class="s2">    display: none;</span>
-<span class="s2">}</span>
-<span class="s2">&lt;/style&gt;</span>
-<span class="s2">"""</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell-outputWrapper">
-<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
-</div>
-<div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[6]:</div>
-<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
-<style>
-div.input {
-    display: none;
-}
-</style>
-</div>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell celltag_hide-input" id="cell-id=d02fcb06">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [7]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># MERGE TO BUILD THE 2018 PLAN–COUNTY–YEAR DATASET</span>
-<span class="c1"># I combine 12 months of enrollment + contract info, then collapse to plan–county–year, then inner merge with service area counties.</span>
-
-<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
-
-<span class="n">YEAR</span> <span class="o">=</span> <span class="mi">2018</span>
-<span class="n">MONTHS</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">m</span><span class="si">:</span><span class="s2">02d</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">13</span><span class="p">)]</span>
-
-<span class="n">DATA_DIR</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">"data"</span><span class="p">)</span>
-<span class="n">CONTRACT_DIR</span> <span class="o">=</span> <span class="n">DATA_DIR</span> <span class="o">/</span> <span class="s2">"ma_enrollment_contract_2018"</span>
-<span class="n">ENROLL_DIR</span>   <span class="o">=</span> <span class="n">DATA_DIR</span> <span class="o">/</span> <span class="s2">"ma_enrollment_plan_2018"</span>
-<span class="n">SERVICE_DIR</span>  <span class="o">=</span> <span class="n">DATA_DIR</span> <span class="o">/</span> <span class="s2">"ma_service_data_2018"</span>
-
-<span class="n">CONTRACT_COLUMNS</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="s2">"contractid"</span><span class="p">,</span> <span class="s2">"planid"</span><span class="p">,</span> <span class="s2">"org_type"</span><span class="p">,</span> <span class="s2">"plan_type"</span><span class="p">,</span> <span class="s2">"partd"</span><span class="p">,</span> <span class="s2">"snp"</span><span class="p">,</span> <span class="s2">"eghp"</span><span class="p">,</span>
-    <span class="s2">"org_name"</span><span class="p">,</span> <span class="s2">"org_marketing_name"</span><span class="p">,</span> <span class="s2">"plan_name"</span><span class="p">,</span> <span class="s2">"parent_org"</span><span class="p">,</span> <span class="s2">"contract_date"</span><span class="p">,</span>
-<span class="p">]</span>
-<span class="n">ENROLL_COLUMNS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"contractid"</span><span class="p">,</span> <span class="s2">"planid"</span><span class="p">,</span> <span class="s2">"ssa"</span><span class="p">,</span> <span class="s2">"fips"</span><span class="p">,</span> <span class="s2">"state"</span><span class="p">,</span> <span class="s2">"county"</span><span class="p">,</span> <span class="s2">"enrollment"</span><span class="p">]</span>
-
-<span class="n">monthly_list</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">MONTHS</span><span class="p">:</span>
-    <span class="n">contract_path</span> <span class="o">=</span> <span class="n">CONTRACT_DIR</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"CPSC_Contract_Info_</span><span class="si">{</span><span class="n">YEAR</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">m</span><span class="si">}</span><span class="s2">.csv"</span>
-    <span class="n">enroll_path</span>   <span class="o">=</span> <span class="n">ENROLL_DIR</span>   <span class="o">/</span> <span class="sa">f</span><span class="s2">"CPSC_Enrollment_Info_</span><span class="si">{</span><span class="n">YEAR</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">m</span><span class="si">}</span><span class="s2">.csv"</span>
-
-    <span class="n">contract</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">contract_path</span><span class="p">,</span> <span class="n">low_memory</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">"latin1"</span><span class="p">)</span>
-    <span class="n">contract</span> <span class="o">=</span> <span class="n">contract</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span>
-        <span class="s2">"Contract ID"</span><span class="p">:</span> <span class="s2">"contractid"</span><span class="p">,</span>
-        <span class="s2">"Plan ID"</span><span class="p">:</span> <span class="s2">"planid"</span><span class="p">,</span>
-        <span class="s2">"Organization Type"</span><span class="p">:</span> <span class="s2">"org_type"</span><span class="p">,</span>
-        <span class="s2">"Plan Type"</span><span class="p">:</span> <span class="s2">"plan_type"</span><span class="p">,</span>
-        <span class="s2">"Offers Part D"</span><span class="p">:</span> <span class="s2">"partd"</span><span class="p">,</span>
-        <span class="s2">"SNP Plan"</span><span class="p">:</span> <span class="s2">"snp"</span><span class="p">,</span>
-        <span class="s2">"EGHP"</span><span class="p">:</span> <span class="s2">"eghp"</span><span class="p">,</span>
-        <span class="s2">"Organization Name"</span><span class="p">:</span> <span class="s2">"org_name"</span><span class="p">,</span>
-        <span class="s2">"Organization Marketing Name"</span><span class="p">:</span> <span class="s2">"org_marketing_name"</span><span class="p">,</span>
-        <span class="s2">"Plan Name"</span><span class="p">:</span> <span class="s2">"plan_name"</span><span class="p">,</span>
-        <span class="s2">"Parent Organization"</span><span class="p">:</span> <span class="s2">"parent_org"</span><span class="p">,</span>
-        <span class="s2">"Contract Date"</span><span class="p">:</span> <span class="s2">"contract_date"</span><span class="p">,</span>
-    <span class="p">})</span>
-    <span class="n">contract</span><span class="p">[</span><span class="s2">"contractid"</span><span class="p">]</span> <span class="o">=</span> <span class="n">contract</span><span class="p">[</span><span class="s2">"contractid"</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">"string"</span><span class="p">)</span>
-    <span class="n">contract</span><span class="p">[</span><span class="s2">"planid"</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">contract</span><span class="p">[</span><span class="s2">"planid"</span><span class="p">],</span> <span class="n">errors</span><span class="o">=</span><span class="s2">"coerce"</span><span class="p">)</span>
-    <span class="n">contract</span> <span class="o">=</span> <span class="n">contract</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s2">"contractid"</span><span class="p">,</span> <span class="s2">"planid"</span><span class="p">])</span>
-    <span class="n">contract</span> <span class="o">=</span> <span class="n">contract</span><span class="p">[[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">CONTRACT_COLUMNS</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">contract</span><span class="o">.</span><span class="n">columns</span><span class="p">]]</span>
-
-    <span class="n">enroll</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">enroll_path</span><span class="p">,</span> <span class="n">na_values</span><span class="o">=</span><span class="p">[</span><span class="s2">"*"</span><span class="p">],</span> <span class="n">low_memory</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">"latin1"</span><span class="p">)</span>
-    <span class="n">enroll</span> <span class="o">=</span> <span class="n">enroll</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span>
-        <span class="s2">"Contract Number"</span><span class="p">:</span> <span class="s2">"contractid"</span><span class="p">,</span>
-        <span class="s2">"Plan ID"</span><span class="p">:</span> <span class="s2">"planid"</span><span class="p">,</span>
-        <span class="s2">"SSA State County Code"</span><span class="p">:</span> <span class="s2">"ssa"</span><span class="p">,</span>
-        <span class="s2">"FIPS State County Code"</span><span class="p">:</span> <span class="s2">"fips"</span><span class="p">,</span>
-        <span class="s2">"State"</span><span class="p">:</span> <span class="s2">"state"</span><span class="p">,</span>
-        <span class="s2">"County"</span><span class="p">:</span> <span class="s2">"county"</span><span class="p">,</span>
-        <span class="s2">"Enrollment"</span><span class="p">:</span> <span class="s2">"enrollment"</span><span class="p">,</span>
-    <span class="p">})</span>
-    <span class="n">enroll</span><span class="p">[</span><span class="s2">"contractid"</span><span class="p">]</span> <span class="o">=</span> <span class="n">enroll</span><span class="p">[</span><span class="s2">"contractid"</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">"string"</span><span class="p">)</span>
-    <span class="n">enroll</span><span class="p">[</span><span class="s2">"planid"</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">enroll</span><span class="p">[</span><span class="s2">"planid"</span><span class="p">],</span> <span class="n">errors</span><span class="o">=</span><span class="s2">"coerce"</span><span class="p">)</span>
-    <span class="n">enroll</span><span class="p">[</span><span class="s2">"enrollment"</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">enroll</span><span class="p">[</span><span class="s2">"enrollment"</span><span class="p">],</span> <span class="n">errors</span><span class="o">=</span><span class="s2">"coerce"</span><span class="p">)</span>
-    <span class="n">enroll</span> <span class="o">=</span> <span class="n">enroll</span><span class="p">[[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">ENROLL_COLUMNS</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">enroll</span><span class="o">.</span><span class="n">columns</span><span class="p">]]</span>
-
-    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">contract</span><span class="p">,</span> <span class="n">enroll</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="p">[</span><span class="s2">"contractid"</span><span class="p">,</span> <span class="s2">"planid"</span><span class="p">],</span> <span class="n">how</span><span class="o">=</span><span class="s2">"left"</span><span class="p">)</span>
-    <span class="n">df</span><span class="p">[</span><span class="s2">"month"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
-    <span class="n">df</span><span class="p">[</span><span class="s2">"year"</span><span class="p">]</span> <span class="o">=</span> <span class="n">YEAR</span>
-
-    <span class="n">df</span><span class="p">[</span><span class="s2">"fips5"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">"fips"</span><span class="p">],</span> <span class="n">errors</span><span class="o">=</span><span class="s2">"coerce"</span><span class="p">)</span>
-          <span class="o">.</span><span class="n">round</span><span class="p">()</span>
-          <span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">"Int64"</span><span class="p">)</span>
-          <span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">"string"</span><span class="p">)</span>
-          <span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
-    <span class="p">)</span>
-
-    <span class="n">monthly_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
-
-<span class="n">monthly</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">monthly_list</span><span class="p">,</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-<span class="c1"># ✅ CHECK (remove later)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"CHECK: monthly stacked rows/cols ="</span><span class="p">,</span> <span class="n">monthly</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-
-<span class="n">plan_county_year</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="n">monthly</span>
-    <span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s2">"contractid"</span><span class="p">,</span> <span class="s2">"planid"</span><span class="p">,</span> <span class="s2">"fips5"</span><span class="p">,</span> <span class="s2">"state"</span><span class="p">,</span> <span class="s2">"county"</span><span class="p">,</span> <span class="s2">"year"</span><span class="p">],</span> <span class="n">as_index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">agg</span><span class="p">(</span>
-        <span class="n">avg_enrollment</span><span class="o">=</span><span class="p">(</span><span class="s2">"enrollment"</span><span class="p">,</span> <span class="s2">"mean"</span><span class="p">),</span>  
-        <span class="n">plan_type</span><span class="o">=</span><span class="p">(</span><span class="s2">"plan_type"</span><span class="p">,</span> <span class="s2">"last"</span><span class="p">),</span>
-        <span class="n">snp</span><span class="o">=</span><span class="p">(</span><span class="s2">"snp"</span><span class="p">,</span> <span class="s2">"last"</span><span class="p">),</span>
-        <span class="n">eghp</span><span class="o">=</span><span class="p">(</span><span class="s2">"eghp"</span><span class="p">,</span> <span class="s2">"last"</span><span class="p">),</span>
-    <span class="p">)</span>
-<span class="p">)</span>
-
-<span class="c1"># ✅ CHECK (remove later)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"CHECK: collapsed plan_county_year rows/cols ="</span><span class="p">,</span> <span class="n">plan_county_year</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-
-<span class="n">service_list</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">MONTHS</span><span class="p">:</span>
-    <span class="n">service_path</span> <span class="o">=</span> <span class="n">SERVICE_DIR</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"MA_Cnty_SA_</span><span class="si">{</span><span class="n">YEAR</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">m</span><span class="si">}</span><span class="s2">.csv"</span>
-    <span class="n">sa</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">service_path</span><span class="p">,</span> <span class="n">low_memory</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">"latin1"</span><span class="p">)</span>
-    <span class="n">service_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sa</span><span class="p">)</span>
-
-<span class="n">service</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">service_list</span><span class="p">,</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-<span class="n">fips_candidates</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">service</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="s2">"fips"</span> <span class="ow">in</span> <span class="n">c</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span>
-<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">fips_candidates</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"No FIPS column found in service area files."</span><span class="p">)</span>
-<span class="n">sa_fips_col</span> <span class="o">=</span> <span class="n">fips_candidates</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-
-<span class="n">service</span><span class="p">[</span><span class="s2">"fips5"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">service</span><span class="p">[</span><span class="n">sa_fips_col</span><span class="p">],</span> <span class="n">errors</span><span class="o">=</span><span class="s2">"coerce"</span><span class="p">)</span>
-      <span class="o">.</span><span class="n">round</span><span class="p">()</span>
-      <span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">"Int64"</span><span class="p">)</span>
-      <span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">"string"</span><span class="p">)</span>
-      <span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
-<span class="p">)</span>
-
-<span class="n">merge_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"fips5"</span><span class="p">]</span>
-
-<span class="n">service</span> <span class="o">=</span> <span class="n">service</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="n">merge_keys</span><span class="p">)</span>
-
-<span class="n">merged</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">plan_county_year</span><span class="p">,</span> <span class="n">service</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="n">merge_keys</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s2">"inner"</span><span class="p">)</span>
-
-<span class="c1"># Checking that merge worked</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"CHECK: service area columns ="</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">service</span><span class="o">.</span><span class="n">columns</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"CHECK: merge keys used ="</span><span class="p">,</span> <span class="n">merge_keys</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"CHECK: merged dataset rows/cols ="</span><span class="p">,</span> <span class="n">merged</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noInput celltag_hide-input" id="cell-id=d02fcb06">
 <div class="jp-Cell-outputWrapper">
 <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>CHECK: monthly stacked rows/cols = (27710394, 19)
 CHECK: collapsed plan_county_year rows/cols = (2477563, 10)
@@ -7717,44 +7542,17 @@ CHECK: merged dataset rows/cols = (2474873, 21)
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <h2 id="Question-1:-Plan-Count-by-Plan-Type">Question 1: Plan Count by Plan Type<a class="anchor-link" href="#Question-1:-Plan-Count-by-Plan-Type">¶</a></h2>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell celltag_hide-input" id="cell-id=2b1154d4">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [8]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># QUESTION 1 - Provide a table of the count of plans under each plan type."</span>
-
-<span class="n">plans</span> <span class="o">=</span> <span class="n">merged</span><span class="p">[[</span><span class="s2">"contractid"</span><span class="p">,</span> <span class="s2">"planid"</span><span class="p">,</span> <span class="s2">"plan_type"</span><span class="p">]]</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">()</span>
-
-<span class="n">table1</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="n">plans</span>
-    <span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">"plan_type"</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">size</span><span class="p">()</span>
-    <span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">YEAR</span><span class="p">))</span>
-    <span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s2">"plan_type"</span><span class="p">)</span>
-<span class="p">)</span>
-
-<span class="n">table1</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noInput celltag_hide-input" id="cell-id=2b1154d4">
 <div class="jp-Cell-outputWrapper">
 <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[8]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div>
 <style scoped="">
@@ -7841,57 +7639,17 @@ CHECK: merged dataset rows/cols = (2474873, 21)
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <h2 id="Question-2:-Plan-Count-After-Exclusions">Question 2: Plan Count After Exclusions<a class="anchor-link" href="#Question-2:-Plan-Count-After-Exclusions">¶</a></h2>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell celltag_hide-input" id="cell-id=080fad9f">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [9]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># QUESTION 2 - "Remove Special Needs Plans (SNP), Employer Group Plans (EGHP), and 800-series plans. Provide updated Table 1."</span>
-
-
-<span class="c1"># Identify SNP and EGHP plans</span>
-<span class="n">snp_true</span> <span class="o">=</span> <span class="n">merged</span><span class="p">[</span><span class="s2">"snp"</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">"string"</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">isin</span><span class="p">([</span><span class="s2">"Y"</span><span class="p">,</span> <span class="s2">"YES"</span><span class="p">,</span> <span class="s2">"1"</span><span class="p">,</span> <span class="s2">"TRUE"</span><span class="p">,</span> <span class="s2">"T"</span><span class="p">])</span>
-<span class="n">eghp_true</span> <span class="o">=</span> <span class="n">merged</span><span class="p">[</span><span class="s2">"eghp"</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">"string"</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">isin</span><span class="p">([</span><span class="s2">"Y"</span><span class="p">,</span> <span class="s2">"YES"</span><span class="p">,</span> <span class="s2">"1"</span><span class="p">,</span> <span class="s2">"TRUE"</span><span class="p">,</span> <span class="s2">"T"</span><span class="p">])</span>
-
-<span class="c1"># Identify 800-series plan IDs (800–899)</span>
-<span class="n">planid_num</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">merged</span><span class="p">[</span><span class="s2">"planid"</span><span class="p">],</span> <span class="n">errors</span><span class="o">=</span><span class="s2">"coerce"</span><span class="p">)</span>
-<span class="n">plan_800</span> <span class="o">=</span> <span class="n">planid_num</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="mi">800</span><span class="p">,</span> <span class="mi">899</span><span class="p">)</span>
-
-<span class="c1"># Apply exclusions</span>
-<span class="n">merged_excl</span> <span class="o">=</span> <span class="n">merged</span><span class="p">[</span><span class="o">~</span><span class="n">snp_true</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">eghp_true</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">plan_800</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-
-<span class="c1"># Recompute plan counts by type</span>
-<span class="n">plans_excl</span> <span class="o">=</span> <span class="n">merged_excl</span><span class="p">[[</span><span class="s2">"contractid"</span><span class="p">,</span> <span class="s2">"planid"</span><span class="p">,</span> <span class="s2">"plan_type"</span><span class="p">]]</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">()</span>
-
-<span class="n">table2</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="n">plans_excl</span>
-    <span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">"plan_type"</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">size</span><span class="p">()</span>
-    <span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">YEAR</span><span class="p">))</span>
-    <span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s2">"plan_type"</span><span class="p">)</span>
-<span class="p">)</span>
-
-<span class="n">table2</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noInput celltag_hide-input" id="cell-id=080fad9f">
 <div class="jp-Cell-outputWrapper">
 <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[9]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div>
 <style scoped="">
@@ -7973,43 +7731,17 @@ CHECK: merged dataset rows/cols = (2474873, 21)
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <h2 id="Question-3:-Average-Enrollment-by-Plan-Type">Question 3: Average Enrollment by Plan Type<a class="anchor-link" href="#Question-3:-Average-Enrollment-by-Plan-Type">¶</a></h2>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell celltag_hide-input" id="cell-id=2f9190eb">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [10]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># QUESTION 3 - Repeat filters from part 2 and focus only on approved counties, then provide average enrollments by plan type. </span>
-<span class="c1"># I.e. the service area data is data about approved counties.</span>
-
-<span class="n">table3</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="n">merged_excl</span>
-    <span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">"plan_type"</span><span class="p">)[</span><span class="s2">"avg_enrollment"</span><span class="p">]</span>
-    <span class="o">.</span><span class="n">mean</span><span class="p">()</span>
-    <span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"avg_enrollment"</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s2">"plan_type"</span><span class="p">)</span>
-<span class="p">)</span>
-
-<span class="n">table3</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noInput celltag_hide-input" id="cell-id=2f9190eb">
 <div class="jp-Cell-outputWrapper">
 <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[10]:</div>
 <div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/html" tabindex="0">
 <div>
 <style scoped="">
